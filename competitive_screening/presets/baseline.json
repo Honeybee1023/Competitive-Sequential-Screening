@@ -1,0 +1,22 @@
+{
+  "name": "Baseline (Paper Example)",
+  "description": "Standard configuration from the paper",
+  "timestamp": "2026-01-23T00:00:00",
+  "parameters": {
+    "v_0": 6.0,
+    "G": {
+      "type": "Uniform",
+      "params": {
+        "a": -1.0,
+        "b": 1.0
+      }
+    },
+    "F": {
+      "type": "Normal",
+      "params": {
+        "mu": 0.0,
+        "sigma": 1.0
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "Narrow Types",
+  "description": "Less ex-ante heterogeneity (narrow G)",
+  "timestamp": "2026-01-23T00:00:00",
+  "parameters": {
+    "v_0": 6.0,
+    "G": {
+      "type": "Uniform",
+      "params": {
+        "a": -0.5,
+        "b": 0.5
+      }
+    },
+    "F": {
+      "type": "Normal",
+      "params": {
+        "mu": 0.0,
+        "sigma": 1.0
+      }
+    }
+  }
+}

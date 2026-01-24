@@ -1,0 +1,7 @@
+numpy>=1.24.0
+scipy>=1.10.0
+pytest>=7.3.0
+pytest-cov>=4.1.0
+matplotlib>=3.7.0
+pandas>=2.0.0  # Optional: for data analysis
+streamlit>=1.28.0  # For interactive frontend

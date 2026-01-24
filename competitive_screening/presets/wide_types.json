@@ -1,0 +1,22 @@
+{
+  "name": "Wide Types",
+  "description": "More ex-ante heterogeneity (wide G)",
+  "timestamp": "2026-01-23T00:00:00",
+  "parameters": {
+    "v_0": 6.0,
+    "G": {
+      "type": "Uniform",
+      "params": {
+        "a": -2.0,
+        "b": 2.0
+      }
+    },
+    "F": {
+      "type": "Normal",
+      "params": {
+        "mu": 0.0,
+        "sigma": 1.0
+      }
+    }
+  }
+}
