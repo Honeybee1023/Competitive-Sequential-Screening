@@ -212,34 +212,117 @@ def solve_equilibrium_NE(v_0: float, F: Distribution, G: Distribution,
         return 1.0 - Q_A(gamma)
 
     # Subscription schedules via envelope theorem
-    # WARNING: Boundary conditions not fully specified in provided PDF excerpt
+    # Formula from Theorem 1 (pages 16-18):
+    # s*_A(p_A) = E[θ|γ̄][(v_A(θ) - p̄_A - (v_B(θ))⁺)⁺] + ∫[p_A to p̄_A] Q*_A(p') dp'
+    # s*_B(p_B) = E[θ|γ̲][(v_B(θ) - p̄_B - (v_A(θ))⁺)⁺] + ∫[p_B to p̄_B] Q*_B(p') dp'
+
+    # Compute upper bounds on strike prices
+    g_min_val = G.pdf(gamma_min)
+    g_max_val = G.pdf(gamma_max)
+
+    if g_min_val < 1e-12 or g_max_val < 1e-12:
+        # Boundary density too small, use approximate bounds
+        p_bar_A = 2.0 / (g_min_val if g_min_val > 1e-12 else 1e-6)
+        p_bar_B = 2.0 / (g_max_val if g_max_val > 1e-12 else 1e-6)
+    else:
+        p_bar_A = 2.0 / g_min_val  # p̄_A = 2/g(γ̲)
+        p_bar_B = 2.0 / g_max_val  # p̄_B = 2/g(γ̄)
+
     def s_A(gamma: float) -> float:
         """
-        Subscription fee for firm A.
+        Subscription fee for firm A at type γ.
 
-        From envelope theorem: s'_A(γ) = -Q_A(γ) · dp_A/dγ
+        Implementation:
+        s*_A(p*_A(γ)) = E[θ|γ̄][(v_A(θ) - p̄_A - (v_B(θ))⁺)⁺] + ∫[p*_A(γ) to p̄_A] Q*_A(p') dp'
 
-        PARTIAL IMPLEMENTATION: Returning 0 for now.
-        Full implementation requires:
-        1. Boundary condition U(γ_min) or equivalent
-        2. Numerical integration of FOC
+        Reference: Theorem 1, pages 16-18
         """
-        # TODO: Implement envelope integral with proper boundary
-        return 0.0
+        p_A_val = p_A(gamma)
+
+        # Boundary utility term: E[θ|γ̄][(v_A(θ) - p̄_A - (v_B(θ))⁺)⁺]
+        def boundary_integrand(epsilon: float) -> float:
+            theta = gamma_max + epsilon
+            v_A_theta = v_0 - theta
+            v_B_theta = v_0 + theta
+            # (v_A - p̄_A - max(v_B, 0))⁺
+            surplus = max(v_A_theta - p_bar_A - max(v_B_theta, 0), 0)
+            return surplus * F.pdf(epsilon)
+
+        eps_min, eps_max = F.support()
+        boundary_utility, _ = quad(boundary_integrand, eps_min, eps_max,
+                                   limit=QUAD_LIMIT, epsabs=1e-8, epsrel=1e-8)
+
+        # Integral term: ∫[p_A to p̄_A] Q*_A(p') dp'
+        # For each p', find γ' such that p*_A(γ') = p', then Q*_A(p') = Q_A(γ')
+        if p_A_val >= p_bar_A:
+            integral_term = 0.0
+        else:
+            def integrand_Q(p_prime: float) -> float:
+                # Invert p*_A(γ) = 2G(γ)/g(γ) = p_prime to find γ
+                # This is monotonic, so use root-finding
+                def equation(g: float) -> float:
+                    return p_A(g) - p_prime
+
+                try:
+                    # Find γ' such that p*_A(γ') = p_prime
+                    result = brentq(equation, gamma_min + 1e-9, gamma_max - 1e-9,
+                                   xtol=tol)
+                    gamma_prime = result
+                    return Q_A(gamma_prime)
+                except (ValueError, RuntimeError):
+                    # If inversion fails, return 0
+                    return 0.0
+
+            integral_term, _ = quad(integrand_Q, p_A_val, p_bar_A,
+                                   limit=QUAD_LIMIT, epsabs=1e-8, epsrel=1e-8)
+
+        return boundary_utility + integral_term
 
     def s_B(gamma: float) -> float:
         """
-        Subscription fee for firm B.
+        Subscription fee for firm B at type γ.
 
-        From envelope theorem: s'_B(γ) = -Q_B(γ) · dp_B/dγ
+        Implementation:
+        s*_B(p*_B(γ)) = E[θ|γ̲][(v_B(θ) - p̄_B - (v_A(θ))⁺)⁺] + ∫[p*_B(γ) to p̄_B] Q*_B(p') dp'
 
-        PARTIAL IMPLEMENTATION: Returning 0 for now.
-        Full implementation requires:
-        1. Boundary condition U(γ_min) or equivalent
-        2. Numerical integration of FOC
+        Reference: Theorem 1, pages 16-18
         """
-        # TODO: Implement envelope integral with proper boundary
-        return 0.0
+        p_B_val = p_B(gamma)
+
+        # Boundary utility term: E[θ|γ̲][(v_B(θ) - p̄_B - (v_A(θ))⁺)⁺]
+        def boundary_integrand(epsilon: float) -> float:
+            theta = gamma_min + epsilon
+            v_A_theta = v_0 - theta
+            v_B_theta = v_0 + theta
+            # (v_B - p̄_B - max(v_A, 0))⁺
+            surplus = max(v_B_theta - p_bar_B - max(v_A_theta, 0), 0)
+            return surplus * F.pdf(epsilon)
+
+        eps_min, eps_max = F.support()
+        boundary_utility, _ = quad(boundary_integrand, eps_min, eps_max,
+                                   limit=QUAD_LIMIT, epsabs=1e-8, epsrel=1e-8)
+
+        # Integral term: ∫[p_B to p̄_B] Q*_B(p') dp'
+        if p_B_val >= p_bar_B:
+            integral_term = 0.0
+        else:
+            def integrand_Q(p_prime: float) -> float:
+                # Invert p*_B(γ) = 2(1-G(γ))/g(γ) = p_prime to find γ
+                def equation(g: float) -> float:
+                    return p_B(g) - p_prime
+
+                try:
+                    result = brentq(equation, gamma_min + 1e-9, gamma_max - 1e-9,
+                                   xtol=tol)
+                    gamma_prime = result
+                    return Q_B(gamma_prime)
+                except (ValueError, RuntimeError):
+                    return 0.0
+
+            integral_term, _ = quad(integrand_Q, p_B_val, p_bar_B,
+                                   limit=QUAD_LIMIT, epsabs=1e-8, epsrel=1e-8)
+
+        return boundary_utility + integral_term
 
     # Coverage condition check: v_0 ≥ max_γ (1/g(γ))
     gamma_grid = np.linspace(gamma_min, gamma_max, 100)
@@ -493,31 +576,105 @@ def solve_equilibrium_E(v_0: float, F: Distribution, G: Distribution,
             f"Indifference condition may not have a solution."
         )
 
-    # Subscription schedules (Proposition 3, page 11)
-    # Note: These are complex integrals. For now, implement as callable stubs.
-    # Full implementation would require numerical integration of the envelope formula.
+    # Subscription schedules (Proposition 4, pages 23-25)
+    # Formula:
+    # s*_A(p_A) = p̂_A · Q^M_B(p̂_B|γ̂) + ∫[p_A to p̂_A] Q*_A(p') dp'
+    # s*_B(p_B) = p̂_B · Q^M_A(p̂_A|γ̂) + ∫[p_B to p̂_B] Q*_B(p') dp'
+
+    # Equilibrium strike prices at critical type
+    p_hat_A = p_M_A(gamma_hat)
+    p_hat_B = p_M_B(gamma_hat)
+
+    # Boundary terms (opportunity costs)
+    Q_B_at_hat = Q_M_B(p_hat_B, gamma_hat)
+    Q_A_at_hat = Q_M_A(p_hat_A, gamma_hat)
 
     def s_A(gamma: float) -> float:
         """
-        Subscription fee for firm A.
+        Subscription fee for firm A at type γ.
 
-        From Proposition 3: s*_A(p_A) = p̂_A Q^M_B(p̂_B|γ̂) + ∫_{p̂_A}^{p_A∧p̂_A} Q*_A(p'_A) dp'_A
+        Implementation:
+        s*_A(p^M_A(γ)) = p̂_A · Q^M_B(p̂_B|γ̂) + ∫[p^M_A(γ) to p̂_A] Q*_A(p') dp'
 
-        This is complex to implement. Returning 0 for now (PARTIAL IMPLEMENTATION).
+        Only types γ ≤ γ̂ subscribe to A (exclusive contracts).
+
+        Reference: Proposition 4, pages 23-25
         """
-        # TODO: Implement full subscription schedule
-        return 0.0
+        if gamma > gamma_hat:
+            # Type chooses firm B, doesn't subscribe to A
+            return 0.0
+
+        p_A_val = p_M_A(gamma)
+
+        # Boundary term
+        boundary_term = p_hat_A * Q_B_at_hat
+
+        # Integral term: ∫[p_A to p̂_A] Q*_A(p') dp'
+        # For exclusive, Q*_A(p') is the monopoly demand at price p'
+        if p_A_val >= p_hat_A:
+            integral_term = 0.0
+        else:
+            def integrand_Q(p_prime: float) -> float:
+                # Invert p^M_A(γ) = G(γ)/g(γ) = p_prime to find γ
+                def equation(g: float) -> float:
+                    return p_M_A(g) - p_prime
+
+                try:
+                    result = brentq(equation, gamma_min + 1e-9, gamma_hat - 1e-9,
+                                   xtol=tol)
+                    gamma_prime = result
+                    # Monopoly demand for firm A at type γ'
+                    return Q_M_A(p_prime, gamma_prime)
+                except (ValueError, RuntimeError):
+                    return 0.0
+
+            integral_term, _ = quad(integrand_Q, p_A_val, p_hat_A,
+                                   limit=QUAD_LIMIT, epsabs=1e-8, epsrel=1e-8)
+
+        return boundary_term + integral_term
 
     def s_B(gamma: float) -> float:
         """
-        Subscription fee for firm B.
+        Subscription fee for firm B at type γ.
 
-        From Proposition 3: s*_B(p_B) = p̂_B Q^M_A(p̂_A|γ̂) + ∫_{p̂_B}^{p_B∧p̂_B} Q*_B(p'_B) dp'_B
+        Implementation:
+        s*_B(p^M_B(γ)) = p̂_B · Q^M_A(p̂_A|γ̂) + ∫[p^M_B(γ) to p̂_B] Q*_B(p') dp'
 
-        This is complex to implement. Returning 0 for now (PARTIAL IMPLEMENTATION).
+        Only types γ > γ̂ subscribe to B (exclusive contracts).
+
+        Reference: Proposition 4, pages 23-25
         """
-        # TODO: Implement full subscription schedule
-        return 0.0
+        if gamma <= gamma_hat:
+            # Type chooses firm A, doesn't subscribe to B
+            return 0.0
+
+        p_B_val = p_M_B(gamma)
+
+        # Boundary term
+        boundary_term = p_hat_B * Q_A_at_hat
+
+        # Integral term: ∫[p_B to p̂_B] Q*_B(p') dp'
+        if p_B_val >= p_hat_B:
+            integral_term = 0.0
+        else:
+            def integrand_Q(p_prime: float) -> float:
+                # Invert p^M_B(γ) = (1-G(γ))/g(γ) = p_prime to find γ
+                def equation(g: float) -> float:
+                    return p_M_B(g) - p_prime
+
+                try:
+                    result = brentq(equation, gamma_hat + 1e-9, gamma_max - 1e-9,
+                                   xtol=tol)
+                    gamma_prime = result
+                    # Monopoly demand for firm B at type γ'
+                    return Q_M_B(p_prime, gamma_prime)
+                except (ValueError, RuntimeError):
+                    return 0.0
+
+            integral_term, _ = quad(integrand_Q, p_B_val, p_hat_B,
+                                   limit=QUAD_LIMIT, epsabs=1e-8, epsrel=1e-8)
+
+        return boundary_term + integral_term
 
     # Coverage condition
     g_hat = G.pdf(gamma_hat)

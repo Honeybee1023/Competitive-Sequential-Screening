@@ -257,17 +257,17 @@ def get_ranking(results, metric='TS'):
         }
     elif metric == 'CS':
         scores = {
+            'NE': results.get('CS_NE'),
             'SP': results['CS_SP'],
-            'MM': results['CS_MM'],
-            'NE': None,  # Approximate
-            'E': None    # Approximate
+            'E': results.get('CS_E'),
+            'MM': results['CS_MM']
         }
     elif metric == 'PS':
         scores = {
+            'NE': results.get('PS_NE'),
             'SP': results['PS_SP'],
-            'MM': results['PS_MM'],
-            'NE': None,  # Approximate
-            'E': None    # Approximate
+            'E': results.get('PS_E'),
+            'MM': results['PS_MM']
         }
 
     # Sort by score (descending), handling None values
@@ -559,9 +559,6 @@ def render_results(results):
         for rank, (setting, score) in enumerate(ranked, 1):
             render_ranking_card(rank, setting, score, 'CS', is_approximate=False)
 
-        # Note about approximate values
-        st.info("ℹ️ CS for NE and E are approximate (subscription schedules incomplete)")
-
     # ===== PRODUCER SURPLUS =====
     with col3:
         st.markdown("### 🏢 Producer Surplus (PS)")
@@ -629,8 +626,13 @@ def render_visualizations(results, G, F):
         with col1:
             st.markdown("### Consumer Surplus")
             fig_cs, ax_cs = plt.subplots(figsize=(5, 4))
-            cs_settings = ['SP', 'MM']
-            cs_values = [results['CS_SP'], results['CS_MM']]
+            cs_settings = ['NE', 'SP', 'E', 'MM']
+            cs_values = [
+                results.get('CS_NE', 0),
+                results['CS_SP'],
+                results.get('CS_E', 0),
+                results['CS_MM']
+            ]
             cs_colors = [COLORS[s] for s in cs_settings]
 
             bars_cs = ax_cs.bar(cs_settings, cs_values, color=cs_colors, alpha=0.7, edgecolor='black')
@@ -641,7 +643,7 @@ def render_visualizations(results, G, F):
                           ha='center', va='bottom', fontsize=10)
 
             ax_cs.set_ylabel('Consumer Surplus', fontsize=10, fontweight='bold')
-            ax_cs.set_title('CS (Accurate Values Only)', fontsize=11, fontweight='bold')
+            ax_cs.set_title('Consumer Surplus Comparison', fontsize=11, fontweight='bold')
             ax_cs.grid(True, alpha=0.3, axis='y')
             plt.tight_layout()
             st.pyplot(fig_cs)
@@ -649,8 +651,13 @@ def render_visualizations(results, G, F):
         with col2:
             st.markdown("### Producer Surplus")
             fig_ps, ax_ps = plt.subplots(figsize=(5, 4))
-            ps_settings = ['SP', 'MM']
-            ps_values = [results['PS_SP'], results['PS_MM']]
+            ps_settings = ['NE', 'SP', 'E', 'MM']
+            ps_values = [
+                results.get('PS_NE', 0),
+                results['PS_SP'],
+                results.get('PS_E', 0),
+                results['PS_MM']
+            ]
             ps_colors = [COLORS[s] for s in ps_settings]
 
             bars_ps = ax_ps.bar(ps_settings, ps_values, color=ps_colors, alpha=0.7, edgecolor='black')
@@ -661,7 +668,7 @@ def render_visualizations(results, G, F):
                           ha='center', va='bottom', fontsize=10)
 
             ax_ps.set_ylabel('Producer Surplus', fontsize=10, fontweight='bold')
-            ax_ps.set_title('PS (Accurate Values Only)', fontsize=11, fontweight='bold')
+            ax_ps.set_title('Producer Surplus Comparison', fontsize=11, fontweight='bold')
             ax_ps.grid(True, alpha=0.3, axis='y')
             plt.tight_layout()
             st.pyplot(fig_ps)

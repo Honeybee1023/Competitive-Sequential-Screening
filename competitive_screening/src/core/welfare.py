@@ -97,26 +97,17 @@ def compute_consumer_surplus_NE(eq: EquilibriumNE) -> float:
 
     U(γ) = -s_A(γ) - s_B(γ) + E_θ|γ[max{v_A(θ) - p_A(γ), v_B(θ) - p_B(γ), 0}]
 
-    WARNING: PARTIAL IMPLEMENTATION
-    Subscription schedules s_A(γ), s_B(γ) are not fully implemented
-    (missing boundary conditions from Theorem 1 which is not in provided PDF).
-
-    This function computes CS assuming s_A = s_B = 0, which will be INCORRECT.
+    Subscription schedules are computed using the formula from Theorem 1 (pages 16-18):
+    s*_A(p_A) = E[θ|γ̄][(v_A(θ) - p̄_A - (v_B(θ))⁺)⁺] + ∫[p_A to p̄_A] Q*_A(p') dp'
 
     Args:
         eq: Solved NE equilibrium
 
     Returns:
-        Expected consumer surplus (APPROXIMATE - subscription fees set to 0)
+        Expected consumer surplus (ACCURATE with subscription schedules)
 
-    Reference: Model pages 2-4, envelope theorem page 8
+    Reference: Theorem 1, pages 16-18
     """
-    import warnings
-    warnings.warn(
-        "compute_consumer_surplus_NE: Subscription schedules not fully implemented. "
-        "Result assumes s_A = s_B = 0, which is incorrect. "
-        "Full implementation requires Theorem 1 boundary conditions."
-    )
 
     v_0 = eq.v_0
     G = eq.G
@@ -164,22 +155,16 @@ def compute_producer_surplus_NE(eq: EquilibriumNE) -> float:
     Both firms collect subscription fees. Only the firm that makes the sale
     collects the strike price.
 
-    WARNING: PARTIAL IMPLEMENTATION
-    Subscription schedules not fully implemented. Returns approximate PS.
+    Subscription schedules are computed using Theorem 1 formula (pages 16-18).
 
     Args:
         eq: Solved NE equilibrium
 
     Returns:
-        Expected producer surplus (APPROXIMATE)
+        Expected producer surplus (ACCURATE with subscription schedules)
 
-    Reference: Payoffs specification page 4
+    Reference: Theorem 1, pages 16-18
     """
-    import warnings
-    warnings.warn(
-        "compute_producer_surplus_NE: Subscription schedules not fully implemented. "
-        "Result may be incorrect."
-    )
 
     G = eq.G
     gamma_min, gamma_max = G.support()
@@ -397,22 +382,17 @@ def compute_consumer_surplus_E(eq: EquilibriumE) -> float:
     U_A(γ) = E_θ|γ[(v_A(θ) - p^M_A(γ))_+] for γ ≤ γ̂
     U_B(γ) = E_θ|γ[(v_B(θ) - p^M_B(γ))_+] for γ > γ̂
 
-    WARNING: PARTIAL IMPLEMENTATION
-    Subscription schedules not fully implemented. Returns approximate CS.
+    Subscription schedules are computed using Proposition 4 formula (pages 23-25):
+    s*_A(p_A) = p̂_A · Q^M_B(p̂_B|γ̂) + ∫[p_A to p̂_A] Q*_A(p') dp'
 
     Args:
         eq: Solved E equilibrium
 
     Returns:
-        Expected consumer surplus (APPROXIMATE)
+        Expected consumer surplus (ACCURATE with subscription schedules)
 
-    Reference: Proposition 3, pages 10-11
+    Reference: Proposition 4, pages 23-25
     """
-    import warnings
-    warnings.warn(
-        "compute_consumer_surplus_E: Subscription schedules not fully implemented. "
-        "Result assumes s_A = s_B = 0, which is incorrect."
-    )
 
     v_0 = eq.v_0
     F = eq.F
@@ -465,22 +445,18 @@ def compute_producer_surplus_E(eq: EquilibriumE) -> float:
     Firm i collects subscription fee s_i(γ) from type γ, plus strike price
     p^M_i(γ) if consumer makes a purchase.
 
-    WARNING: PARTIAL IMPLEMENTATION
-    Subscription schedules not fully implemented.
+    Subscription schedules are computed using the formula from Proposition 4 (pages 23-25):
+    s*_A(p^M_A(γ)) = p̂_A · Q^M_B(p̂_B|γ̂) + ∫[p^M_A(γ) to p̂_A] Q*_A(p') dp'
+    s*_B(p^M_B(γ)) = p̂_B · Q^M_A(p̂_A|γ̂) + ∫[p^M_B(γ) to p̂_B] Q*_B(p') dp'
 
     Args:
         eq: Solved E equilibrium
 
     Returns:
-        Expected producer surplus (APPROXIMATE)
+        Expected producer surplus (ACCURATE with subscription schedules)
 
-    Reference: Payoffs specification page 4, Proposition 3 pages 10-11
+    Reference: Payoffs specification page 4, Proposition 3 pages 10-11, Proposition 4 pages 23-25
     """
-    import warnings
-    warnings.warn(
-        "compute_producer_surplus_E: Subscription schedules not fully implemented. "
-        "Result may be incorrect."
-    )
 
     v_0 = eq.v_0
     F = eq.F
@@ -653,7 +629,7 @@ def compute_all_welfare_MM(v_0: float, F: Distribution, G: Distribution) -> dict
 
 def compute_all_welfare(v_0: float, F: Distribution, G: Distribution) -> dict:
     """
-    Master convenience function: compute TS for all 4 market settings.
+    Master convenience function: compute welfare metrics for all 4 market settings.
 
     This is the recommended function for quick comparisons.
 
@@ -663,8 +639,9 @@ def compute_all_welfare(v_0: float, F: Distribution, G: Distribution) -> dict:
         G: Type distribution (ex-ante heterogeneity)
 
     Returns:
-        dict with keys: TS_NE, TS_SP, TS_E, TS_MM, CS_SP, CS_MM, PS_SP, PS_MM
-        (CS and PS only for SP and MM, as NE and E are approximate)
+        dict with keys: TS_NE, TS_SP, TS_E, TS_MM, CS_NE, CS_SP, CS_E, CS_MM,
+                        PS_NE, PS_SP, PS_E, PS_MM
+        All metrics are accurate (subscription schedules implemented for NE and E)
 
     Example:
         >>> from src import Uniform, Normal
@@ -690,11 +667,15 @@ def compute_all_welfare(v_0: float, F: Distribution, G: Distribution) -> dict:
         'TS_E': e_results['TS'],
         'TS_MM': mm_results['TS'],
 
-        # Consumer/Producer Surplus (SP and MM only - accurate)
+        # Consumer Surplus (all accurate with subscription schedules)
+        'CS_NE': ne_results['CS'],
         'CS_SP': sp_results['CS'],
+        'CS_E': e_results['CS'],
         'CS_MM': mm_results['CS'],
-        'PS_SP': sp_results['PS'],
-        'PS_MM': mm_results['PS'],
 
-        # Note: CS/PS for NE and E are approximate (not included)
+        # Producer Surplus (all accurate with subscription schedules)
+        'PS_NE': ne_results['PS'],
+        'PS_SP': sp_results['PS'],
+        'PS_E': e_results['PS'],
+        'PS_MM': mm_results['PS'],
     }
