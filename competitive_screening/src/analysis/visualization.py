@@ -13,12 +13,12 @@ from matplotlib.axes import Axes
 from .parameter_sweep import SweepResult
 
 
-# Color scheme for market settings (colorblind-friendly)
+# Color scheme for market settings (consistent across UI)
 COLORS = {
-    'NE': '#0173B2',  # Blue
-    'SP': '#DE8F05',  # Orange
-    'E': '#029E73',   # Green
-    'MM': '#CC78BC'   # Purple
+    'NE': '#FFC107',  # Yellow
+    'SP': '#28a745',  # Green
+    'E': '#dc3545',   # Red
+    'MM': '#0173B2'   # Blue
 }
 
 LINESTYLES = {

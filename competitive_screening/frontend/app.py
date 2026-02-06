@@ -65,19 +65,20 @@ st.markdown("""
         border-left: 4px solid #1f77b4;
         margin-bottom: 1rem;
     }
-    .winner-card {
+    /* Setting-specific card colors (consistent across all rankings) */
+    .sp-card {
         background-color: #d4edda;
         border-color: #28a745;
     }
-    .second-card {
+    .mm-card {
         background-color: #d1ecf1;
-        border-color: #17a2b8;
+        border-color: #0173B2;
     }
-    .third-card {
+    .ne-card {
         background-color: #fff3cd;
-        border-color: #ffc107;
+        border-color: #FFC107;
     }
-    .fourth-card {
+    .e-card {
         background-color: #f8d7da;
         border-color: #dc3545;
     }
@@ -479,14 +480,14 @@ def render_sidebar():
     return compute_button, v_0, G_config, F_config
 
 def render_ranking_card(rank, setting, score, metric, is_approximate=False):
-    """Render a single ranking card."""
-    # Determine card style based on rank
+    """Render a single ranking card with consistent setting-based colors."""
+    # Determine card style based on setting type (consistent colors)
     card_class = {
-        1: "winner-card",
-        2: "second-card",
-        3: "third-card",
-        4: "fourth-card"
-    }.get(rank, "metric-card")
+        'NE': 'ne-card',
+        'SP': 'sp-card',
+        'E': 'e-card',
+        'MM': 'mm-card'
+    }.get(setting, 'metric-card')
 
     # Icons
     rank_icon = {
@@ -729,7 +730,7 @@ def render_formula_reference():
     st.caption("Mathematical formulas from the paper")
 
     # Spot Pricing
-    with st.expander("🔵 Spot Pricing (SP) Equilibrium"):
+    with st.expander("🟢 Spot Pricing (SP) Equilibrium"):
         st.latex(r"\theta^* = \frac{1 - 2H(\theta^*)}{h(\theta^*)}")
         st.markdown("""
         **Critical position** where consumer is indifferent between A and B.
@@ -746,7 +747,7 @@ def render_formula_reference():
         """)
 
     # Multi-Good Monopoly
-    with st.expander("🟣 Multi-Good Monopoly (MM) Equilibrium"):
+    with st.expander("🔵 Multi-Good Monopoly (MM) Equilibrium"):
         st.latex(r"(p_A^*, p_B^*, s^*) = (0, 0, \mathbb{E}_{\theta|0}[\max\{v_A(\theta), v_B(\theta)\}])")
         st.markdown("""
         **Optimal contract**: Zero strike prices, full surplus extraction via subscription fee.
@@ -763,9 +764,9 @@ def render_formula_reference():
         """)
 
     # Non-Exclusive
-    with st.expander("🔵 Non-Exclusive (NE) Equilibrium"):
+    with st.expander("🟡 Non-Exclusive (NE) Equilibrium"):
         st.markdown("""
-        **Strike prices** (deduced from model structure):
+        **Strike prices** (Theorem 1, pages 16-18):
         """)
         st.latex(r"p_A^*(\gamma) = \frac{2G(\gamma)}{g(\gamma)}, \quad p_B^*(\gamma) = \frac{2(1-G(\gamma))}{g(\gamma)}")
         st.markdown("""
@@ -773,11 +774,30 @@ def render_formula_reference():
         - Consumers subscribe to **both firms**
         - Exercise option for product with higher realized value
 
-        **Note:** Full equilibrium from Theorem 1 (not in provided PDF excerpt)
+        **Upper bounds on strike prices:**
+        """)
+        st.latex(r"\bar{p}_A = \frac{2}{g(\underline{\gamma})}, \quad \bar{p}_B = \frac{2}{g(\bar{\gamma})}")
+        st.markdown("""
+        where γ̲ = γ_min and γ̄ = γ_max.
+
+        **Subscription schedules** (via envelope theorem):
+        """)
+        st.latex(r"""
+        s_A^*(p_A) = \mathbb{E}_{\theta|\bar{\gamma}}\left[\left(v_A(\theta) - \bar{p}_A - (v_B(\theta))_+\right)_+\right] + \int_{p_A}^{\bar{p}_A} Q_A^*(p') \, dp'
+        """)
+        st.latex(r"""
+        s_B^*(p_B) = \mathbb{E}_{\theta|\underline{\gamma}}\left[\left(v_B(\theta) - \bar{p}_B - (v_A(\theta))_+\right)_+\right] + \int_{p_B}^{\bar{p}_B} Q_B^*(p') \, dp'
+        """)
+        st.markdown("""
+        - First term: Boundary utility at extreme types
+        - Second term: Integral of interim demand over strike prices
+        - Ensures incentive compatibility across type space
+
+        **Reference:** Theorem 1, pages 16-18
         """)
 
     # Exclusive
-    with st.expander("🟢 Exclusive (E) Equilibrium"):
+    with st.expander("🔴 Exclusive (E) Equilibrium"):
         st.markdown("""
         **Indifference condition** for critical type γ̂:
         """)
@@ -794,7 +814,24 @@ def render_formula_reference():
         - Creates allocation inefficiency (can't switch after ε revealed)
         - γ̂ splits market between firms A and B
 
-        **Reference:** Proposition 3, pages 10-11, equation (5)
+        **Equilibrium strike prices** at critical type:
+        """)
+        st.latex(r"\hat{p}_A = p_A^M(\hat{\gamma}), \quad \hat{p}_B = p_B^M(\hat{\gamma})")
+        st.markdown("""
+        **Subscription schedules** (Proposition 4, pages 23-25):
+        """)
+        st.latex(r"""
+        s_A^*(p_A) = \hat{p}_A \cdot Q_B^M(\hat{p}_B|\hat{\gamma}) + \int_{p_A}^{\hat{p}_A} Q_A^*(p') \, dp'
+        """)
+        st.latex(r"""
+        s_B^*(p_B) = \hat{p}_B \cdot Q_A^M(\hat{p}_A|\hat{\gamma}) + \int_{p_B}^{\hat{p}_B} Q_B^*(p') \, dp'
+        """)
+        st.markdown("""
+        - First term: Boundary term (opportunity cost at γ̂)
+        - Second term: Integral of monopoly interim demand
+        - Only types γ ≤ γ̂ subscribe to A; types γ > γ̂ subscribe to B
+
+        **Reference:** Proposition 3 (pages 10-11), Proposition 4 (pages 23-25)
         """)
 
     # Total Surplus
