@@ -170,7 +170,7 @@ def create_distribution(dist_type, params):
     elif dist_type == "Normal":
         return Normal(params['mu'], params['sigma'])
     elif dist_type == "Logistic":
-        return Logistic(params['mu'], params['scale'])
+        return Logistic(params['mu'], params['s'])
     else:
         raise ValueError(f"Unknown distribution type: {dist_type}")
 
@@ -395,6 +395,28 @@ def render_sidebar():
         st.session_state.G_normal_mu = mu
         st.session_state.G_normal_sigma = sigma
 
+    elif G_type == "Logistic":
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            mu = st.number_input(
+                "Location (μ)",
+                value=st.session_state.get('G_logistic_mu', 0.0),
+                step=0.1,
+                key='G_logistic_mu_input'
+            )
+        with col2:
+            s = st.number_input(
+                "Scale (s)",
+                value=st.session_state.get('G_logistic_s', 1.0),
+                step=0.1,
+                min_value=0.01,
+                key='G_logistic_s_input'
+            )
+
+        G_config = {'type': 'Logistic', 'params': {'mu': mu, 's': s}}
+        st.session_state.G_logistic_mu = mu
+        st.session_state.G_logistic_s = s
+
     st.sidebar.markdown("---")
 
     # ===== F DISTRIBUTION (Taste Shock) =====
@@ -438,6 +460,20 @@ def render_sidebar():
 
         F_config = {'type': 'Uniform', 'params': {'a': -width, 'b': width}}
         st.session_state.F_uniform_width = width
+
+    elif F_type == "Logistic":
+        st.sidebar.info("ℹ️ For symmetric F, location is fixed at μ=0")
+        s = st.sidebar.slider(
+            "Scale (s)",
+            min_value=0.1,
+            max_value=5.0,
+            value=st.session_state.get('F_logistic_s', 1.0),
+            step=0.1,
+            help="Lower s = more precise information"
+        )
+
+        F_config = {'type': 'Logistic', 'params': {'mu': 0.0, 's': s}}
+        st.session_state.F_logistic_s = s
 
     st.sidebar.markdown("---")
 
