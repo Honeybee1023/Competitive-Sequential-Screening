@@ -2,7 +2,7 @@
 
 > **A complete computational framework for analyzing welfare across competing market designs with sequential information revelation**
 
-Implementation of models from ["Competitive Sequential Screening"](https://arxiv.org/abs/2409.02878) by Ball, Kattwinkel, and Knoepfle (2024).
+Implementation of models from ["Competitive Sequential Screening"] by Ball, Kattwinkel, and Knoepfle (2024).
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
