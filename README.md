@@ -2,7 +2,7 @@
 
 > **A complete computational framework for analyzing welfare across competing market designs with sequential information revelation**
 
-Implementation of models from ["Competitive Sequential Screening"] by Ball, Kattwinkel, and Knoepfle (2024).
+Implementation of models from "Competitive Sequential Screening" by Ball, Kattwinkel, and Knoepfle (2024).
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -444,23 +444,6 @@ fig = plot_welfare_decomposition(
 
 ---
 
-## 📝 Citation
-
-If you use this code in your research, please cite:
-
-```bibtex
-@article{ball2024competitive,
-  title={Competitive Sequential Screening},
-  author={Ball, Ian and Kattwinkel, Deniz and Knoepfle, Daniel},
-  journal={arXiv preprint arXiv:2409.02878},
-  year={2024}
-}
-```
-
-**Paper:** https://arxiv.org/abs/2409.02878
-
----
-
 ## 🛠️ Technical Details
 
 ### Numerical Methods
@@ -521,9 +504,7 @@ Special thanks to the open-source community for the excellent scientific computi
 
 For questions, issues, or collaboration opportunities, please:
 - Open an issue on GitHub
-- Email: [your email]
-- Twitter: [@yourhandle]
-
+- Email: honjar@mit.edu
 ---
 
 **Status:** ✅ Production Ready | **Version:** 1.0.0 | **Last Updated:** February 2026
